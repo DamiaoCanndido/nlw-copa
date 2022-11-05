@@ -2,7 +2,7 @@
   "expo": {
     "name": "nlwcopamobile",
     "slug": "nlwcopamobile",
-    "schema": "nlwcopamobile",
+    "scheme": "nlwcopamobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -23,10 +25,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.damiaocanndido.nlwcopamobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3b2b0f1a-033e-4397-a516-0a6a5bd8e848"
+      }
     }
   }
 }

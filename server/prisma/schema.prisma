@@ -49,6 +49,8 @@ model User {
 model Game {
   id                    String   @id @default(cuid())
   date                  DateTime
+  firstTeamPoints       Int?
+  secondTeamPoints      Int?
   firstTeamCountryCode  String
   secondTeamCountryCode String
   guesses               Guess[]
@@ -58,6 +60,7 @@ model Guess {
   id               String      @id @default(cuid())
   firstTeamPoints  Int
   secondTeamPoints Int
+  points           Int         @default(0)
   createdAt        DateTime    @default(now())
   gameId           String
   participantId    String

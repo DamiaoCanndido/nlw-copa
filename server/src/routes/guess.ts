@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { dateUTC } from "../helper/date_utc";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authenticate } from "../plugins/authenticate";
@@ -70,7 +71,7 @@ export async function guessRoutes(fastify: FastifyInstance) {
         });
       }
 
-      if (game.date < new Date()) {
+      if (game.date < dateUTC(Date.now())) {
         return reply.status(400).send({
           message: "You cannot send guesses after the game date",
         });

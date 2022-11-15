@@ -48,7 +48,7 @@ export async function poolRoutes(fastify: FastifyInstance) {
         },
       });
 
-      return { pools };
+      return pools;
     },
   );
 
@@ -91,7 +91,7 @@ export async function poolRoutes(fastify: FastifyInstance) {
         },
       });
 
-      return { pool };
+      return pool;
     },
   );
 

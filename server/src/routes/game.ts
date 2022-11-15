@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { dateUTC } from "src/helper/date_utc";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authenticate } from "../plugins/authenticate";
@@ -34,7 +35,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
           ...game,
           guess: game.guesses.length > 0 ? game.guesses[0] : null,
           guesses: undefined,
-          isExpired: new Date() > game.date ? true : false,
+          isExpired: dateUTC(Date.now()) > game.date ? true : false,
         };
       });
     },

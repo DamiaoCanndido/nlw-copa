@@ -29,15 +29,35 @@ export async function gameRoutes(fastify: FastifyInstance) {
         },
       });
 
-      return {
-        games: games.map((game) => {
-          return {
-            ...game,
-            guess: game.guesses.length > 0 ? game.guesses[0] : null,
-            guesses: undefined,
-          };
-        }),
-      };
+      return games.map((game) => {
+        return {
+          ...game,
+          guess: game.guesses.length > 0 ? game.guesses[0] : null,
+          guesses: undefined,
+          isExpired: new Date() > game.date ? true : false,
+        };
+      });
     },
   );
+
+  fastify.post("/games", async (request, reply) => {
+    const createGuessBody = z.object({
+      firstTeamCountryCode: z.string(),
+      secondTeamCountryCode: z.string(),
+      date: z.string(),
+    });
+
+    const { firstTeamCountryCode, secondTeamCountryCode, date } =
+      createGuessBody.parse(request.body);
+
+    const game = await prisma.game.create({
+      data: {
+        date,
+        firstTeamCountryCode,
+        secondTeamCountryCode,
+      },
+    });
+
+    return game;
+  });
 }

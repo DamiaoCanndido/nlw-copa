@@ -61,4 +61,65 @@ export async function gameRoutes(fastify: FastifyInstance) {
 
     return game;
   });
+
+  fastify.put("/games/:id", async (request, reply) => {
+    const getGameParam = z.object({
+      id: z.string(),
+    });
+
+    const updateGameBody = z.object({
+      firstTeamPoints: z.number(),
+      secondTeamPoints: z.number(),
+    });
+
+    const { id } = getGameParam.parse(request.params);
+
+    const { firstTeamPoints, secondTeamPoints } = updateGameBody.parse(
+      request.body,
+    );
+
+    const gameExists = await prisma.game.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!gameExists) {
+      return reply.status(400).send({
+        message: "This game do not exists.",
+      });
+    }
+
+    const game = await prisma.game.update({
+      where: {
+        id,
+      },
+      data: {
+        firstTeamPoints,
+        secondTeamPoints,
+      },
+    });
+
+    // 3 points
+    await prisma.guess.updateMany({
+      where: {
+        gameId: id,
+        AND: {
+          firstTeamPoints: {
+            equals: firstTeamPoints,
+          },
+          secondTeamPoints: {
+            equals: secondTeamPoints,
+          },
+        },
+      },
+      data: {
+        points: 3,
+      },
+    });
+
+    // 1 point
+
+    return { message: "Jogo encerrado" };
+  });
 }

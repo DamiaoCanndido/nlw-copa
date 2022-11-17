@@ -172,4 +172,47 @@ export async function poolRoutes(fastify: FastifyInstance) {
       });
     },
   );
+
+  fastify.get(
+    "/pools/:id/rank",
+    { onRequest: [authenticate] },
+    async (request, reply) => {
+      const getPoolParam = z.object({
+        id: z.string(),
+      });
+
+      const { id } = getPoolParam.parse(request.params);
+
+      const poolExists = await prisma.pool.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (!poolExists) {
+        return reply.status(400).send({
+          message: "This pool not exists.",
+        });
+      }
+
+      const rank = await prisma.participant.findMany({
+        where: {
+          poolId: id,
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              avatarUrl: true,
+            },
+          },
+        },
+        orderBy: {
+          points: "desc",
+        },
+      });
+
+      return rank;
+    },
+  );
 }

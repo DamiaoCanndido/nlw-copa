@@ -86,9 +86,21 @@ export async function gameRoutes(fastify: FastifyInstance) {
       },
     });
 
+    const poolExists = await prisma.pool.findUnique({
+      where: {
+        id: poolId,
+      },
+    });
+
     if (!gameExists) {
       return reply.status(400).send({
         message: "This game do not exists.",
+      });
+    }
+
+    if (!poolExists) {
+      return reply.status(400).send({
+        message: "This pool do not exists.",
       });
     }
 
@@ -140,32 +152,17 @@ export async function gameRoutes(fastify: FastifyInstance) {
       },
     });
 
-    const usersExtract = sum.map((e) => {
-      return e.participantId;
-    });
-
-    const pointsExtract = sum.map((e) => {
-      return e._sum.points;
-    });
-
-    const players = await prisma.user.findMany({
-      where: {
-        participatingAt: {
-          some: {
-            id: {
-              in: usersExtract,
-            },
-          },
+    for (let r = 0; r < sum.length; r++) {
+      await prisma.participant.update({
+        where: {
+          id: sum[r].participantId,
         },
-      },
-    });
+        data: {
+          points: sum[r]._sum.points,
+        },
+      });
+    }
 
-    return players.map((e) => {
-      return {
-        name: e.name,
-        avatarUrl: e.avatarUrl,
-        points: pointsExtract[players.indexOf(e)],
-      };
-    });
+    return { message: "Game full time" };
   });
 }

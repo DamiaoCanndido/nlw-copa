@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { dateUTC } from "src/helper/date_utc";
+import { pointsHelper } from "../helper/points";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { authenticate } from "../plugins/authenticate";
@@ -62,9 +63,10 @@ export async function gameRoutes(fastify: FastifyInstance) {
     return game;
   });
 
-  fastify.put("/games/:id", async (request, reply) => {
+  fastify.put("/games/:id/pools/:poolId", async (request, reply) => {
     const getGameParam = z.object({
       id: z.string(),
+      poolId: z.string(),
     });
 
     const updateGameBody = z.object({
@@ -72,7 +74,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
       secondTeamPoints: z.number(),
     });
 
-    const { id } = getGameParam.parse(request.params);
+    const { id, poolId } = getGameParam.parse(request.params);
 
     const { firstTeamPoints, secondTeamPoints } = updateGameBody.parse(
       request.body,
@@ -90,7 +92,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const game = await prisma.game.update({
+    await prisma.game.update({
       where: {
         id,
       },
@@ -100,26 +102,70 @@ export async function gameRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // 3 points
-    await prisma.guess.updateMany({
+    const guesses = await prisma.guess.findMany({
       where: {
         gameId: id,
-        AND: {
-          firstTeamPoints: {
-            equals: firstTeamPoints,
-          },
-          secondTeamPoints: {
-            equals: secondTeamPoints,
-          },
-        },
-      },
-      data: {
-        points: 3,
       },
     });
 
-    // 1 point
+    for (let g = 0; g < guesses.length; g++) {
+      const score = pointsHelper(
+        guesses[g].firstTeamPoints,
+        guesses[g].secondTeamPoints,
+        firstTeamPoints,
+        secondTeamPoints,
+      );
+      await prisma.guess.update({
+        where: {
+          id: guesses[g].id,
+        },
+        data: {
+          points: score,
+        },
+      });
+    }
 
-    return { message: "Jogo encerrado" };
+    const sum = await prisma.guess.groupBy({
+      by: ["participantId"],
+      where: {
+        participant: {
+          poolId,
+        },
+      },
+      _sum: { points: true },
+      orderBy: {
+        _sum: {
+          points: "desc",
+        },
+      },
+    });
+
+    const usersExtract = sum.map((e) => {
+      return e.participantId;
+    });
+
+    const pointsExtract = sum.map((e) => {
+      return e._sum.points;
+    });
+
+    const players = await prisma.user.findMany({
+      where: {
+        participatingAt: {
+          some: {
+            id: {
+              in: usersExtract,
+            },
+          },
+        },
+      },
+    });
+
+    return players.map((e) => {
+      return {
+        name: e.name,
+        avatarUrl: e.avatarUrl,
+        points: pointsExtract[players.indexOf(e)],
+      };
+    });
   });
 }

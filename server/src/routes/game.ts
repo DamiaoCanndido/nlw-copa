@@ -63,10 +63,9 @@ export async function gameRoutes(fastify: FastifyInstance) {
     return game;
   });
 
-  fastify.put("/games/:id/pools/:poolId", async (request, reply) => {
+  fastify.put("/games/:id", async (request, reply) => {
     const getGameParam = z.object({
       id: z.string(),
-      poolId: z.string(),
     });
 
     const updateGameBody = z.object({
@@ -74,7 +73,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
       secondTeamPoints: z.number(),
     });
 
-    const { id, poolId } = getGameParam.parse(request.params);
+    const { id } = getGameParam.parse(request.params);
 
     const { firstTeamPoints, secondTeamPoints } = updateGameBody.parse(
       request.body,
@@ -86,21 +85,9 @@ export async function gameRoutes(fastify: FastifyInstance) {
       },
     });
 
-    const poolExists = await prisma.pool.findUnique({
-      where: {
-        id: poolId,
-      },
-    });
-
     if (!gameExists) {
       return reply.status(400).send({
         message: "This game do not exists.",
-      });
-    }
-
-    if (!poolExists) {
-      return reply.status(400).send({
-        message: "This pool do not exists.",
       });
     }
 
@@ -139,11 +126,6 @@ export async function gameRoutes(fastify: FastifyInstance) {
 
     const sum = await prisma.guess.groupBy({
       by: ["participantId"],
-      where: {
-        participant: {
-          poolId,
-        },
-      },
       _sum: { points: true },
       orderBy: {
         _sum: {
